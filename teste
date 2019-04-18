@@ -1,0 +1,98 @@
+### chamada_por_texto call_id x Texto
+#Opção 1
+create table chamada_por_texto as select call_id,group_concat(word,' ') as conversation 
+from user 
+group by ville 
+where confiabilidade>400;
+
+#Opção 2
+create table chamada_por_texto as select call_id,CONCAT_WS (' ',word) as conversation 
+from user
+group by call_id
+where confiabilidade>400;
+
+
+
+
+
+### chamadas_join_ia
+create table chamadas_join_ia as select call_id,chamada_por_texto.conversation as conversation,ligacoes_ia.atividade_ia as atividade_ia
+from chamada_por_texto 
+left join ligacoes_ia
+on ligacoes_ia.call_id=chamada_por_texto.call_id;
+
+
+
+
+
+
+
+pip download --platform=manylinux1_x86_64 --only-binary=:all:
+
+baixar: https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/stopwords.zip
+extrari no path
+nltk.data.path = 'path'
+from nltk.corpus import stopwords
+
+
+config = tf.ConfigProto(device_count={"CPU": 32})
+keras.backend.tensorflow_backend.set_session(tf.Session(config=config))
+
+
+
+sql = 'Select conversation,atividade_ia from chamadas_join_ia;'
+
+
+# X = base['conversation']
+# y = base['atividade_ia']
+
+get_elmo_embeddings(base,text_column='conversation',label_column='atividade_ia')
+
+#############3
+
+wget http://143.107.183.175:22980/download.php?file=embeddings/word2vec/cbow_s50.zip
+from gensim.models import KeyedVectors
+model = KeyedVectors.load_word2vec_format(‘model.txt’)
+
+vocab_size = len(all_words) + 1
+def get_weight_matrix():
+    # define weight matrix dimensions with all 0
+    weight_matrix = np.zeros((vocab_size, w2v.vector_size))
+    # step vocab, store vectors using the Tokenizer's integer mapping
+    for i in range(len(all_words)):
+        weight_matrix[i + 1] = w2v[all_words[i]]
+    return weight_matrix
+
+embedding_vectors = get_weight_matrix()
+
+model = Sequential()
+emb_layer = Embedding(vocab_size, output_dim=100, weights=[embedding_vectors], input_length=50, trainable=False)
+
+model = Word2Vec(sentences, size=50 workers=32)
+
+sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
+embedded_sequences = embedding_layer(sequence_input)
+x = Conv1D(128, 5, activation='relu')(embedded_sequences)
+x = MaxPooling1D(5)(x)
+x = Conv1D(128, 5, activation='relu')(x)
+x = MaxPooling1D(5)(x)
+x = Conv1D(128, 5, activation='relu')(x)
+x = MaxPooling1D(35)(x)  # global max pooling
+x = Flatten()(x)
+x = Dense(128, activation='relu')(x)
+preds = Dense(len(labels_index), activation='softmax')(x)
+
+model = Model(sequence_input, preds)
+model.compile(loss='categorical_crossentropy',
+              optimizer='rmsprop',
+              metrics=['acc'])
+
+# happy learning!
+model.fit(x_train, y_train, validation_data=(x_val, y_val),
+          epochs=2, batch_size=128)
+
+
+https://www.depends-on-the-definition.com/guide-to-word-vectors-with-gensim-and-keras/
+
+
+
